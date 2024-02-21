@@ -6,8 +6,7 @@ public class BreadOven : MonoBehaviour
 {
     [SerializeField]
     private float breadDelay = 2f;
-    private int maximumCapacity = 8;
-    private int CroassantNum = default;
+    private int maxCapacity = 8;
     private GameObject[] croassnts = default;
 
     WaitForSeconds delayTime = default;
@@ -27,13 +26,14 @@ public class BreadOven : MonoBehaviour
     void Init()
     {
         delayTime = new WaitForSeconds(breadDelay);
-        croassnts = new GameObject[maximumCapacity];
-        CroassantNum = 0;
+        croassnts = new GameObject[maxCapacity];
     }
 
     // Update is called once per frame
     void Update()
     {
+
+
         if(checker.IsEnter && croassnts.Length > 0)
         {
             StartCoroutine(GiveBread());
@@ -46,9 +46,10 @@ public class BreadOven : MonoBehaviour
         int idx = 0;
         while(idx < 1)
         {
-            croassnts[idx].transform.SetParent(checker.player.spawnPoint.transform);
-
+            croassnts[idx].transform.SetParent(checker.player.objectStacker.transform);
+            croassnts[idx].GetComponent<Croassant>().SimulateProjectile(checker.player.objectStacker.transform.position);        
             idx++;
+            croassnts[idx] = null;
             yield return null;
         }
                     
@@ -57,12 +58,11 @@ public class BreadOven : MonoBehaviour
 
     IEnumerator MakeBread()
     {
-        while(CheckFull())
+        while(IsEmpty())
         {
             GameObject tempObj = Instantiate(ResourceManager.objects[RDefine.OBJECT_CROASSANT], spawnPoint.position ,Quaternion.identity);
             tempObj.GetComponent<Croassant>().Spawn(spawnPoint.transform.forward);
             AddCroassant(tempObj);
-            CroassantNum++;
             yield return delayTime;
         }
     }
@@ -74,18 +74,22 @@ public class BreadOven : MonoBehaviour
             if (croassnts[i] == null)
             {
                 croassnts[i] = croassant_;
+                return;
             }
+            
         }
     }
 
-    // TODO : 메서드 이름과 반환형이 맞지 않으므로 수정해야 함
-    // Full이 되면 false를 반환하는 상황임
-    bool CheckFull()
+    bool IsEmpty()
     {
-        if(CroassantNum >= maximumCapacity)
+        foreach(GameObject croassant in croassnts)
         {
-            return false;
+            if(croassant == null)
+            {
+                return true;
+            }
+            
         }
-        return true;
+        return false;
     }
 }

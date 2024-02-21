@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 using UnityEngine.UIElements;
+using System.Net;
 
 public class Croassant : MonoBehaviour
 {
@@ -11,6 +12,9 @@ public class Croassant : MonoBehaviour
     [SerializeField]
     private float speed = 15f;
 
+
+    // TODO 베지어 테스트
+    public float maxHeight = 5f;   // 최대 높이
     private void Awake()
     {
         Init();
@@ -30,47 +34,47 @@ public class Croassant : MonoBehaviour
         rigid.AddForce(dir * speed, ForceMode.VelocityChange);
     }
 
-    //IEnumerator MovePalabolic(Vector3 start, Vector3 dest)
-    //{
-    //    float distnace = (start - dest).magnitude;
-    //    while ()
-    //    {
+    public void SimulateProjectile(Vector3 dest)
+    {
+        Vector3 start = transform.position;
+        Vector3 end = dest;
 
-    //    }
-    //}
-    //IEnumerator ParabolicProjection(Vector3 start, Vector3 dest)
-    //{
+        // 베지어 곡선의 제어점 계산
+        Vector3 midPoint = (start + end) / 2f;
+        midPoint += Vector3.up * maxHeight;
 
-    //    // 대상까지의 거리 계산
-    //    float target_Distance = Vector3.Distance(start, dest);
+        // 베지어 곡선 포인트 계산
+        Vector3[] path = new Vector3[] { start, midPoint, end };
 
-    //    // 물체를 지정된 각도로 목표물에 던지는 데 필요한 속도를 계산합니다.
-    //    float projectile_Velocity = target_Distance / (Mathf.Sin(2 * firingAngle * Mathf.Deg2Rad) / gravity);
+        // 베지어 곡선의 포인트에 따라 이동하는 포물선 운동 구현
+        StartCoroutine(FollowBezierCurve(path));
+    }
 
-    //    // 속도의 X,Y 추출
-    //    float Vx = Mathf.Sqrt(projectile_Velocity) * Mathf.Cos(firingAngle * Mathf.Deg2Rad);
-    //    float Vy = Mathf.Sqrt(projectile_Velocity) * Mathf.Sin(firingAngle * Mathf.Deg2Rad);
+    // 베지어 곡선을 따라 이동하는 포물선 운동 구현
+    private IEnumerator FollowBezierCurve(Vector3[] path)
+    {
+        float t = 0f;
+        float duration = 0.2f; // 이동에 걸리는 시간
 
-    //    // 비행 시간을 계산한다
-    //    float flight_Duration = target_Distance / Vx;
+        while (t < 1f)
+        {
+            t += Time.deltaTime / duration;
+            Vector3 newPosition = Bezier.GetPoint(path[0], path[1], path[2], t);
+            transform.position = newPosition;
+            yield return null;
+        }
+        Debug.Log("1");
+        rigid.isKinematic = true;
+    }
+}
 
-    //    // 발사체를 회전 시켜 목표물을 향하게 한다
-    //    transform.rotation = Quaternion.LookRotation(dest - transform.position);
-
-    //    //경과 시간
-    //    float elapse_time = 0;
-
-    //    Vector3 defaultScale = Projectile.localScale;
-
-    //    //투사체가 목표 지점 까지 포물선을 그리면서 정해진 시간과 속도 만큼 간다는 주석 
-    //    while (elapse_time < flight_Duration)
-    //    {
-    //        Projectile.Translate(0, (Vy - (gravity * elapse_time)) * Time.deltaTime, Vx * Time.deltaTime);
-
-    //        elapse_time += Time.deltaTime;
-
-    //        yield return null;
-    //    }
-
-    //} 
+// 베지어 곡선 계산을 위한 보조 클래스
+public static class Bezier
+{
+    public static Vector3 GetPoint(Vector3 p0, Vector3 p1, Vector3 p2, float t)
+    {
+        t = Mathf.Clamp01(t);
+        float oneMinusT = 1f - t;
+        return oneMinusT * oneMinusT * p0 + 2f * oneMinusT * t * p1 + t * t * p2;
+    }
 }

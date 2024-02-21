@@ -6,19 +6,27 @@ using UnityEngine.InputSystem.XR;
 
 public class PlayerController : MonoBehaviour
 {
+    
     private Vector2 inputVector = default;
     private Animator animator = default;
     private Rigidbody rigid = default;
 
+    private Stack<GameObject> stackers = new Stack<GameObject>();
+    
     [SerializeField]
     private float moveSpeed = 10f;
 
 
-    public GameObject spawnPoint = default;
+    public GameObject objectStacker = default;
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
         rigid = GetComponent<Rigidbody>();
+    }
+
+    void Init()
+    {
+
     }
 
     private void FixedUpdate()
