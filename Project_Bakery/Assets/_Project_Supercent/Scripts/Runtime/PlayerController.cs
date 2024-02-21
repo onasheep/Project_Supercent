@@ -12,6 +12,9 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField]
     private float moveSpeed = 10f;
+
+
+    public GameObject spawnPoint = default;
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();

@@ -8,12 +8,14 @@ public class BreadOven : MonoBehaviour
     private float breadDelay = 2f;
     private int maximumCapacity = 8;
     private int CroassantNum = default;
-    private GameObject[] croaasnts = default;
+    private GameObject[] croassnts = default;
 
     WaitForSeconds delayTime = default;
 
     public Transform spawnPoint;
 
+    [SerializeField]
+    private PlayerChecker checker = default;
     // Start is called before the first frame update
     void Start()
     {
@@ -25,15 +27,33 @@ public class BreadOven : MonoBehaviour
     void Init()
     {
         delayTime = new WaitForSeconds(breadDelay);
-        croaasnts = new GameObject[maximumCapacity];
+        croassnts = new GameObject[maximumCapacity];
         CroassantNum = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if(checker.IsEnter && croassnts.Length > 0)
+        {
+            StartCoroutine(GiveBread());
+        }
     }
+
+
+    IEnumerator GiveBread()
+    {
+        int idx = 0;
+        while(idx < 1)
+        {
+            croassnts[idx].transform.SetParent(checker.player.spawnPoint.transform);
+
+            idx++;
+            yield return null;
+        }
+                    
+    }
+
 
     IEnumerator MakeBread()
     {
@@ -49,11 +69,11 @@ public class BreadOven : MonoBehaviour
 
     void AddCroassant(GameObject croassant_)
     {
-        for(int i = 0; i < croaasnts.Length; i++)
+        for(int i = 0; i < croassnts.Length; i++)
         {
-            if (croaasnts[i] == null)
+            if (croassnts[i] == null)
             {
-                croaasnts[i] = croassant_;
+                croassnts[i] = croassant_;
             }
         }
     }
