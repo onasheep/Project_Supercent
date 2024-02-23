@@ -1,20 +1,31 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BreadOven : MonoBehaviour
 {
-    [SerializeField]
-    private float breadDelay = 2f;
     private int maxCapacity = 8;
-    private GameObject[] croassnts = default;
+    private Croassant[] croassants = default;
+    
+    
+    [SerializeField]
+    private float makeDelay = 2f;
+    private float giveDelay = 0.5f;
 
-    WaitForSeconds delayTime = default;
+    WaitForSeconds makeDelayTime = default;
+    WaitForSeconds giveDelayTime = default;
+
 
     public Transform spawnPoint;
 
     [SerializeField]
     private PlayerChecker checker = default;
+    private ObjectStacker stacker = default;
+
+    private IEnumerator makeCoroutine = default;
+    private IEnumerator giveCoroutine = default;
+
+    private bool isGiving = default;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -25,34 +36,54 @@ public class BreadOven : MonoBehaviour
 
     void Init()
     {
-        delayTime = new WaitForSeconds(breadDelay);
-        croassnts = new GameObject[maxCapacity];
+        makeDelayTime = new WaitForSeconds(makeDelay);
+        giveDelayTime = new WaitForSeconds(giveDelay);
+        croassants = new Croassant[maxCapacity];
+
+        makeCoroutine = MakeBread();
+        giveCoroutine = GiveBread();
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
 
 
-        if(checker.IsEnter && croassnts.Length > 0)
+        if (checker.IsEnter)
         {
-            StartCoroutine(GiveBread());
+            stacker = checker.player.objectStacker;
+            if (croassants.Length > 0 && isGiving == false)
+            {
+
+                StartCoroutine(GiveBread());
+
+            }
+
         }
+        else
+        {
+            isGiving = false;
+            StopCoroutine(GiveBread());
+        }
+
     }
 
 
     IEnumerator GiveBread()
     {
-        int idx = 0;
-        while(idx < 1)
+        isGiving = true;
+        while (stacker.CurCapacity < stacker.MaxCapacity)
         {
-            croassnts[idx].transform.SetParent(checker.player.objectStacker.transform);
-            croassnts[idx].GetComponent<Croassant>().SimulateProjectile(checker.player.objectStacker.transform.position);        
-            idx++;
-            croassnts[idx] = null;
-            yield return null;
+            int tempIdx = GetCroassantIdx();
+            if(tempIdx == -1) { yield break; }
+
+            croassants[tempIdx].transform.SetParent(stacker.transform);
+            stacker.AddToStack(croassants[tempIdx]);
+            croassants[tempIdx].GetComponent<Croassant>().SimulateProjectile(stacker.GetStackPos());
+            croassants[tempIdx] = null;
+            yield return giveDelayTime;
         }
-                    
+        isGiving = false;     
     }
 
 
@@ -61,19 +92,32 @@ public class BreadOven : MonoBehaviour
         while(IsEmpty())
         {
             GameObject tempObj = Instantiate(ResourceManager.objects[RDefine.OBJECT_CROASSANT], spawnPoint.position ,Quaternion.identity);
-            tempObj.GetComponent<Croassant>().Spawn(spawnPoint.transform.forward);
-            AddCroassant(tempObj);
-            yield return delayTime;
+            Croassant croassant = tempObj.GetComponent<Croassant>();
+            croassant.Spawn(spawnPoint.transform.forward);
+            AddCroassant(croassant);
+            yield return makeDelayTime;
         }
     }
 
-    void AddCroassant(GameObject croassant_)
+    int GetCroassantIdx()
     {
-        for(int i = 0; i < croassnts.Length; i++)
+        for(int i = 0; i <  croassants.Length; i++)
         {
-            if (croassnts[i] == null)
+            if (croassants[i] != null)
             {
-                croassnts[i] = croassant_;
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    void AddCroassant(Croassant croassant_)
+    {
+        for(int i = 0; i < croassants.Length; i++)
+        {
+            if (croassants[i] == null)
+            {
+                croassants[i] = croassant_;
                 return;
             }
             
@@ -82,7 +126,7 @@ public class BreadOven : MonoBehaviour
 
     bool IsEmpty()
     {
-        foreach(GameObject croassant in croassnts)
+        foreach(Croassant croassant in croassants)
         {
             if(croassant == null)
             {
