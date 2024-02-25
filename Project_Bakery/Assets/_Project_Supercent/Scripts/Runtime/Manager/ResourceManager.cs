@@ -6,11 +6,13 @@ public static class ResourceManager
 {
     #region Dictionarys
     public static Dictionary<string, GameObject> objects;
+    public static Dictionary<string, Sprite> sprites;
     #endregion
 
     public static void Init()
     {
         objects = new Dictionary<string, GameObject>();
+        sprites = new Dictionary<string, Sprite>();
         AddResouces();
     }       // Init()
 
@@ -18,6 +20,7 @@ public static class ResourceManager
     public static void AddResouces()
     {
         GameObject[] objResources = Resources.LoadAll<GameObject>(RDefine.PATH_OBJECT);
+        Sprite[] spriteResources = Resources.LoadAll<Sprite>(RDefine.PATH_SPRITE);
 
 
         AddDictionary(objResources, objects);

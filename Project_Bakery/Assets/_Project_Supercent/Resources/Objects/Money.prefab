@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 389300152054471804}
   - component: {fileID: 3659396771680441305}
   - component: {fileID: 1525663300852492051}
+  - component: {fileID: -5551210824296779011}
   m_Layer: 0
   m_Name: Money
   m_TagString: Untagged
@@ -83,3 +84,15 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &-5551210824296779011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1021405347015165638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64035f7916b7e064a913b80bbfea13b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

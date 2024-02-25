@@ -9,7 +9,7 @@ public class BreadOven : MonoBehaviour
     
     [SerializeField]
     private float makeDelay = 2f;
-    private float giveDelay = 0.5f;
+    private float giveDelay = 1f;
 
     WaitForSeconds makeDelayTime = default;
     WaitForSeconds giveDelayTime = default;
@@ -21,17 +21,15 @@ public class BreadOven : MonoBehaviour
     private PlayerChecker checker = default;
     private ObjectStacker stacker = default;
 
-    private IEnumerator makeCoroutine = default;
-    private IEnumerator giveCoroutine = default;
-
     private bool isGiving = default;
+
+    private bool isEnter = default;
 
     // Start is called before the first frame update
     void Start()
     {
         Init();
         StartCoroutine(MakeBread());
-
     }
 
     void Init()
@@ -40,40 +38,46 @@ public class BreadOven : MonoBehaviour
         giveDelayTime = new WaitForSeconds(giveDelay);
         croassants = new Croassant[maxCapacity];
 
-        makeCoroutine = MakeBread();
-        giveCoroutine = GiveBread();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
 
+        isEnter = checker.IsEnter;
 
-        if (checker.IsEnter)
+        if (isEnter)
         {
             stacker = checker.player.objectStacker;
-            if (croassants.Length > 0 && isGiving == false)
+            if (isGiving == false)
             {
-
                 StartCoroutine(GiveBread());
-
+            }
+            else if(GetCroassantIdx() == -1)
+            {
+                isGiving = false;
+                StartCoroutine(MakeBread());
             }
 
         }
         else
         {
+            Debug.Log("isEnter = false");
             isGiving = false;
             StopCoroutine(GiveBread());
         }
 
     }
 
-
+    private
     IEnumerator GiveBread()
     {
-        isGiving = true;
         while (stacker.CurCapacity < stacker.MaxCapacity)
         {
+            
+
+            isGiving = true;
+
             int tempIdx = GetCroassantIdx();
             if(tempIdx == -1) { yield break; }
 
@@ -122,6 +126,18 @@ public class BreadOven : MonoBehaviour
             }
             
         }
+    }
+    bool isExist()
+    {
+        foreach(Croassant croassant in croassants)
+        {
+            if(croassant != null)
+            {
+                return true;
+            }
+        }
+        return false;
+
     }
 
     bool IsEmpty()

@@ -7,5 +7,6 @@ public static class RDefine
 {
 
     public const string PATH_OBJECT = "Objects";
+    public const string PATH_SPRITE = "Sprites";
     public const string OBJECT_CROASSANT = "Croassant";
 }

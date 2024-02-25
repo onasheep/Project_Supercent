@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Threading;
 using UnityEngine;
 
 public class PlayerChecker : MonoBehaviour
@@ -10,8 +9,8 @@ public class PlayerChecker : MonoBehaviour
     
     private Vector3 scaleOffset = default;
     private Vector3 originScale = default;
-    // Start is called before the first frame update
-    void Start()
+
+    void Awake()
     {
         Init();
     }

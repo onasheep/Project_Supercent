@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BreadStorage : MonoBehaviour
@@ -8,14 +9,13 @@ public class BreadStorage : MonoBehaviour
     private ObjectStacker stacker = default;
 
     private Croassant[] croassants = default;
-    public Vector3[] pos = default;
+    public GameObject[] pos = default;
     private readonly int maxCapacity = 8;
     private bool isGiving = default;
+    private Queue<Customer> customers = default;
+    private float getDelay = 0.1f;
 
-    private float giveDelay = 0.5f;
-
-    WaitForSeconds makeDelayTime = default;
-    WaitForSeconds giveDelayTime = default;
+    WaitForSeconds getDelayTime = default;
 
 
     private void Awake()
@@ -30,72 +30,154 @@ public class BreadStorage : MonoBehaviour
     void Init()
     {
         croassants = new Croassant[maxCapacity];
-        giveDelayTime = new WaitForSeconds(giveDelay);
+        getDelayTime = new WaitForSeconds(getDelay);
+        customers = new Queue<Customer>();
 
         //pos = new Vector3[maxCapacity];
     }
 
     private void FixedUpdate()
     {
+
         if (checker.IsEnter)
         {
-            stacker = checker.player.objectStacker;
-            if (croassants.Length < 1 )
+            if(IsGettable() && isGiving == false)
             {
-
-                StartCoroutine(GiveBread());
-
+                stacker = checker.player.objectStacker;
+                StartCoroutine(GetBread());
             }
+            else if(IsGettable() == false)
+            {
+                isGiving = false;
+                StopCoroutine(GetBread());
+            }
+         
+
 
         }
         else
         {
             isGiving = false;
-            StopCoroutine(GiveBread());
+            StopCoroutine(GetBread());
         }
-    }
 
-    //IEnumerator GetBread()
-    //{
-    //    while(stacker.CurCapacity != 0)
-    //    {
-    //        stacker.
-    //        yield return giveDelayTime;
-    //    }
-    //}
-
-    IEnumerator GiveBread()
-    {
-        isGiving = true;
-        while (stacker.CurCapacity < stacker.MaxCapacity)
+        if(customers == null || customers.Count < 1 ) { return; }
+        if(IsGivable())
         {
-            int tempIdx = GetCroassantIdx();
-            if (tempIdx == -1) { yield break; }
-
-            croassants[tempIdx].transform.SetParent(stacker.transform);
-            stacker.AddToStack(croassants[tempIdx]);
-            croassants[tempIdx].GetComponent<Croassant>().SimulateProjectile(pos[tempIdx]);
-            croassants[tempIdx] = null;
-            yield return giveDelayTime;
+            CheckCustomerState();
         }
-        isGiving = false;
+        
+        
+
     }
 
-    int GetCroassantIdx()
+
+
+    private void CheckCustomerState()
+    {
+        foreach (Customer customer in customers)
+        {
+            if (customer.state == Customer.STATE.WAIT)
+            {
+                if (customer.CurCapacity < customer.MaxCapacity)
+                {
+                    customer.CurCapacity++;
+                    GiveBread(customer);
+                }
+            }
+        }
+    }
+    public void GiveBread(Customer customer)
     {
         for (int i = 0; i < croassants.Length; i++)
         {
             if (croassants[i] != null)
             {
+                customer.AddCroassant(croassants[i]);
+                croassants[i].SimulateProjectile(customer.GetStackPos());
+                croassants[i].transform.SetParent(customer.stackPos.transform);
+                croassants[i] = null;
+                return;
+            }
+        }
+    }
+
+    IEnumerator GetBread()
+    {
+        while (stacker.CurCapacity > 0)
+        {
+            isGiving = true;
+            Croassant temp = stacker.ReturnCroassant();
+            temp.SimulateProjectile(pos[FindEmptyIndex()].transform.position);
+            temp.transform.SetParent(null);
+            AddStack(temp);
+            yield return getDelayTime;
+        }
+        isGiving = false;
+    }
+
+    int FindEmptyIndex()
+    {
+        for(int i = 0; i < croassants.Length;i++)
+        {
+            if (croassants[i] == null)
+            {
                 return i;
             }
         }
-        return -1;
+        return default;
+    }
+    void AddStack(Croassant croassant_)
+    {
+        for (int i = 0; i < croassants.Length; i++)
+        {
+            if (croassants[i] == null)
+            {
+                croassants[i] = croassant_;
+                return;
+
+            }
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    bool IsGivable()
     {
-        
+        for(int i = 0; i < croassants.Length;i++)
+        {
+            if (croassants[i] != null)
+            {
+                return true;
+            }
+        }
+        return false;
     }
+    bool IsGettable()
+    {
+        for (int i = 0; i < croassants.Length; i++)
+        {
+            if (croassants[i] == null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.gameObject.layer == LayerMask.NameToLayer("Customer"))
+        {
+            customers.Enqueue(other.GetComponent<Customer>());
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.layer == LayerMask.NameToLayer("Customer"))
+        {
+            customers.Dequeue();
+        }
+    }
+
 }

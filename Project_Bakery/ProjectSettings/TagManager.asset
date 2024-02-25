@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Customer
   layers:
   - Default
   - TransparentFX
@@ -12,10 +13,10 @@ TagManager:
   - Water
   - UI
   - Player
-  - 
+  - Customer
   - Croassant
   - BreadOven
-  - 
+  - Ground
   - 
   - 
   - 
@@ -43,4 +44,7 @@ TagManager:
     locked: 0
   - name: MoneyAdd
     uniqueID: 513549751
+    locked: 0
+  - name: Ballon
+    uniqueID: 1401022011
     locked: 0
