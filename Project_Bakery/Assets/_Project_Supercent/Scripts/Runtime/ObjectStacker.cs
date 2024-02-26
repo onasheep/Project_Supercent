@@ -1,18 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using UnityEngine;
 
 public class ObjectStacker : MonoBehaviour
 {
 
-    // 추후 확장성을 고려해서 Stack이 가능한 오브젝트들의 상위 클래스 타입으로 가져오기
     public Croassant[] stack = default;
 
-    public List<GameObject> stackPos;
+    private GameObject maxText = default;
 
     public int MaxCapacity { get { return maxCapacity; } }
     public int CurCapacity { get { return curCapacity; } }    
     public bool IsStack { get { return isStack; } }
+
 
     private readonly int maxCapacity = 8;
     [SerializeField]
@@ -31,15 +32,24 @@ public class ObjectStacker : MonoBehaviour
     void Init()
     {
         stack = new Croassant[maxCapacity];
+        maxText = gameObject.FindChildObj("MaxText");
+        maxText.SetActive(false);
         isFull = false;      
     }
     // Update is called once per frame
     void Update()
     {
 
-        CheckArray();               
+        CheckArray();
+        SetMaxText();
     }
 
+    private void SetMaxText()
+    {
+        if(curCapacity < maxCapacity) { return; }
+
+        maxText.SetActive(true);
+    }
     private bool CheckArray()
     {
         for(int i = 0; i < stack.Length; i++)

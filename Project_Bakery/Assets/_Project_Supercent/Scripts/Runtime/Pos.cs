@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Pos : MonoBehaviour
@@ -7,8 +8,12 @@ public class Pos : MonoBehaviour
     private PlayerChecker checker;
     [SerializeField]
     private GameObject[] paperbagPos = default;
-    private Customer customer = default;
-    private List<Croassant> croassants = default;
+    [SerializeField]
+    private BoxCollider[] customerCheckCol = default;
+
+    private List<Customer> customers = default;
+    private MoneyPile moneyPile = default;
+    private GameObject moneyPos = default;
 
     private bool isCustomerEnter = default;
     private bool isRegistering = default;
@@ -20,8 +25,11 @@ public class Pos : MonoBehaviour
     void Init()
     {
         checker = gameObject.FindChildComponent<PlayerChecker>("PlayerChecker");
+        customerCheckCol = gameObject.GetComponents<BoxCollider>();
         isCustomerEnter = false;
         isRegistering = false;
+        customers = new List<Customer>();
+        moneyPos = gameObject.FindChildObj("MoneyPos");
     }
     // Start is called before the first frame update
     void Start()
@@ -32,42 +40,75 @@ public class Pos : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (checker.IsEnter && isCustomerEnter)
+        if(customers.Count == 0) { return; }
+        if (checker.IsEnter)
         {
-            if (customer != null && isRegistering == false)
+            if(GetFirstCustomer().prevState == Customer.STATE.MOVE_REGISTER_OUT)
             {
-                isRegistering = true;
-                StartCoroutine(SellProcess());
+                if (isRegistering == false)
+                {
+                    StartCoroutine(SellOutProcess());
+                }
             }
+            else
+            {
+                if(isRegistering == false)
+                {
+                    GetFirstCustomer().isRegister = true;
+                }
+            }
+            
         }
     }
 
 
-    
-    void SpawnPaperBag()
+    IEnumerator SellOutProcess()
     {
-
-    }
-
-    IEnumerator SellProcess()
-    {
-        GameObject paperBag = Instantiate(ResourceManager.objects["PaperBag"], paperbagPos[1].transform.position,Quaternion.identity);
-        while (customer.isMoveable())
+        Customer customer = GetFirstCustomer();
+        GameObject paperBag = Instantiate(ResourceManager.objects["PaperBag"], paperbagPos[1].transform.position, Quaternion.Euler(0f, 90f, 0f));        
+        while (customer.CurCapacity > 0)
         {
-            customer.MoveCroaasant().SimulateProjectile(paperbagPos[1].transform.position);
-            yield return new WaitForSeconds(0.1f);
+            isRegistering = true;
+            if (!customers.Contains(customer)) 
+            {
+                isRegistering = false;
+                yield break;             
+            }
+            customer.MoveCroaasant(paperbagPos[1].transform.position);
+            yield return new WaitForSeconds(1f);
         }
         paperBag.transform.SetParent(customer.stackPos.transform);
-        paperBag.transform.localPosition = Vector3.zero;
+        customers.Remove(customer);
         customer.isRegister = true;
+        customer.ClearList();
+        isRegistering = false;
     }
+    
+    void CreatMoneyPile()
+    {
+        moneyPile = Instantiate(ResourceManager.objects["MoneyPile"],moneyPos.transform).GetComponent<MoneyPile>();
+    }
+
+
+    Customer GetFirstCustomer()
+    {
+        for(int i = 0; i < customers.Count; i++) 
+        {
+            if (customers[i] != null)
+            {
+                return customers[i];
+            }
+
+        }
+        return null;
+    }
+
 
     void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.layer == LayerMask.NameToLayer("Customer"))
         {
-            customer = other.gameObject.GetComponent<Customer>();
-            isCustomerEnter = true;
+            customers.Add(other.gameObject.GetComponent<Customer>());
         }
     }
 
@@ -75,7 +116,15 @@ public class Pos : MonoBehaviour
     {
         if (other.gameObject.layer == LayerMask.NameToLayer("Customer"))
         {
-            isCustomerEnter = false;
+            if(moneyPile == null)
+            {
+                CreatMoneyPile();
+            }
+            Customer customer = other.gameObject.GetComponent<Customer>();
+            moneyPile.SpawnMoney(customer.MaxCapacity * 5);
+            SoundManager.Instance.OnPlayClip(RDefine.SFX_CASH);
+            if(customer.stackPos.FindChildObj("PaperBag(Clone)") == null) { return; }
+            customer.stackPos.FindChildObj("PaperBag(Clone)").transform.localPosition = Vector3.zero;
         }
     }
 }

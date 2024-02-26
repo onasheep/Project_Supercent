@@ -4,8 +4,7 @@ using TMPro;
 public class GameManager : MonoBehaviour
 {
 
-    private static GameManager _instance = default;
-
+    private static GameManager _instance = default;   
     public static GameManager Instance
     {
         get
@@ -16,22 +15,36 @@ public class GameManager : MonoBehaviour
 
 
     public int money = 5;
-    private PlayerController player;
-    private BreadStorage storage;
-
+    public PlayerController player;
     public TMP_Text moneyText;
+    private Arrow arrow;
+
+
+    public bool isFirstOven = default;
+    public bool isFirstStorage = default;
+    public bool isFirstPos = default;
+    public bool isFirstMoneyPile = default;
+    public bool isFirstTempArea = default;
     private void Awake()
     {
-        if(_instance == null)
+        Init();
+
+    }
+
+    void Init()
+    {
+        if (_instance == null)
         {
             _instance = this;
         }
         ResourceManager.Init();
         player = GFunc.GetRootObj("Player").GetComponent<PlayerController>();
+        arrow = GFunc.GetRootObj("Arrow").GetComponent<Arrow>();
     }
     // Start is called before the first frame update
     void Start()
     {
+
     }
 
     // Update is called once per frame
@@ -44,4 +57,6 @@ public class GameManager : MonoBehaviour
     {
         moneyText.text = money.ToString();
     }
+
+    
 }

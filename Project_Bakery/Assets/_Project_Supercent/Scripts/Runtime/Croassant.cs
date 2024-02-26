@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using static UnityEngine.GraphicsBuffer;
 
 public class Croassant : MonoBehaviour
@@ -37,17 +38,28 @@ public class Croassant : MonoBehaviour
         Vector3 start = transform.position;
         Vector3 end = dest;
 
-        // 베지어 곡선의 제어점 계산
         Vector3 midPoint = (start + end) / 2f;
         midPoint += Vector3.up * maxHeight;
 
-        // 베지어 곡선 포인트 계산
         Vector3[] path = new Vector3[] { start, midPoint, end };
 
-        // 베지어 곡선의 포인트에 따라 이동하는 포물선 운동 구현
         StartCoroutine(FollowBezierCurve(path));
     }
-    private IEnumerator FollowBezierCurve(Vector3[] path)
+
+    public void SimulateProjectile(Vector3 dest, UnityAction done)
+    {
+
+        Vector3 start = transform.position;
+        Vector3 end = dest;
+
+        Vector3 midPoint = (start + end) / 2f;
+        midPoint += Vector3.up * maxHeight;
+
+        Vector3[] path = new Vector3[] { start, midPoint, end };
+
+        StartCoroutine(FollowBezierCurve(path, done));
+    }
+    private IEnumerator FollowBezierCurve(Vector3[] path, UnityAction done = null)
     {
         float t = 0f;
         while (t < 1f)
@@ -63,13 +75,13 @@ public class Croassant : MonoBehaviour
             transform.rotation = rot;
             yield return null;
         }
+        done?.Invoke();
         rigid.isKinematic = true;
 
     }
 
 }
 
-    // 베지어 곡선 계산을 위한 보조 클래스
     public static class Bezier
 {
     public static Vector3 GetPoint(Vector3 p0, Vector3 p1, Vector3 p2, float t)

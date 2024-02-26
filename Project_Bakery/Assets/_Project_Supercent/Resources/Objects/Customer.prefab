@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1378869876}
   m_Layer: 10
-  m_Name: Croassant
+  m_Name: CroassantBallon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -721,6 +721,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stackPos: {fileID: 8787526486109617015}
+  isRegister: 0
 --- !u!195 &8787526486526553229
 NavMeshAgent:
   m_ObjectHideFlags: 0

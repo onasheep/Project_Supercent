@@ -9,7 +9,7 @@ public class BreadOven : MonoBehaviour
     
     [SerializeField]
     private float makeDelay = 2f;
-    private float giveDelay = 1f;
+    private float giveDelay = 0.5f;
 
     WaitForSeconds makeDelayTime = default;
     WaitForSeconds giveDelayTime = default;
@@ -22,6 +22,7 @@ public class BreadOven : MonoBehaviour
     private ObjectStacker stacker = default;
 
     private bool isGiving = default;
+    private bool isMaking = default;
 
     private bool isEnter = default;
 
@@ -53,20 +54,18 @@ public class BreadOven : MonoBehaviour
             {
                 StartCoroutine(GiveBread());
             }
-            else if(GetCroassantIdx() == -1)
-            {
-                isGiving = false;
-                StartCoroutine(MakeBread());
-            }
-
         }
         else
         {
-            Debug.Log("isEnter = false");
             isGiving = false;
             StopCoroutine(GiveBread());
         }
 
+        if (GetCroassantIdx() == -1 && isMaking == false)
+        {
+
+            StartCoroutine(MakeBread());
+        }
     }
 
     private
@@ -79,11 +78,16 @@ public class BreadOven : MonoBehaviour
             isGiving = true;
 
             int tempIdx = GetCroassantIdx();
-            if(tempIdx == -1) { yield break; }
+            if(tempIdx == -1) 
+            {
+                isGiving = false;
+                yield break;             
+            }
 
             croassants[tempIdx].transform.SetParent(stacker.transform);
             stacker.AddToStack(croassants[tempIdx]);
             croassants[tempIdx].GetComponent<Croassant>().SimulateProjectile(stacker.GetStackPos());
+            SoundManager.Instance.OnPlayClip(RDefine.SFX_GET);
             croassants[tempIdx] = null;
             yield return giveDelayTime;
         }
@@ -95,12 +99,14 @@ public class BreadOven : MonoBehaviour
     {
         while(IsEmpty())
         {
+            isMaking = true;
             GameObject tempObj = Instantiate(ResourceManager.objects[RDefine.OBJECT_CROASSANT], spawnPoint.position ,Quaternion.identity);
             Croassant croassant = tempObj.GetComponent<Croassant>();
             croassant.Spawn(spawnPoint.transform.forward);
             AddCroassant(croassant);
             yield return makeDelayTime;
         }
+        isMaking = false;
     }
 
     int GetCroassantIdx()
@@ -126,18 +132,6 @@ public class BreadOven : MonoBehaviour
             }
             
         }
-    }
-    bool isExist()
-    {
-        foreach(Croassant croassant in croassants)
-        {
-            if(croassant != null)
-            {
-                return true;
-            }
-        }
-        return false;
-
     }
 
     bool IsEmpty()

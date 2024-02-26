@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using TMPro;
+using JetBrains.Annotations;
 
 public class Customer : MonoBehaviour
 {
@@ -15,11 +16,12 @@ public class Customer : MonoBehaviour
     private GameObject customerBallon = default;
     private GameObject croassantBallon = default;
     private SpriteRenderer stateImage = default;
+    private SpriteRenderer emojiImage = default;
 
     private float moveSpeed = default;
     public int MaxCapacity { get; private set; }
     public int CurCapacity { get; set; }
-
+    
 
     private bool isStack = default;
     private bool isWait = default;
@@ -29,11 +31,11 @@ public class Customer : MonoBehaviour
 
     public enum STATE
     {
-        NONE = -1, MOVE_ENTRANCE, MOVE_STORAGE, MOVE_REGISTER, WAIT, LEAVE, SIT
+        NONE = -1, MOVE_ENTRANCE, MOVE_STORAGE, MOVE_REGISTER_OUT, MOVE_REGISTER_IN, MOVE_SIT, WAIT, LEAVE,SIT
     }
 
     public STATE state { get; private set; }
-
+    public STATE prevState { get; private set; }
     void Awake()
     {
         Init();
@@ -50,8 +52,9 @@ public class Customer : MonoBehaviour
         navAgent = GetComponent<NavMeshAgent>();
         customerBallon = gameObject.FindChildObj("CustomerBallon");
         croassantBallon = customerBallon.FindChildObj("CroassantBallon");
-        breadNumText = croassantBallon.FindChildObj("NeedNum").GetComponent<TMP_Text>();
-        stateImage = customerBallon.FindChildObj("StateImage").GetComponent<SpriteRenderer>();
+        breadNumText = croassantBallon.FindChildComponent<TMP_Text>("NeedNum");
+        stateImage = customerBallon.FindChildComponent<SpriteRenderer>("StateImage");
+        emojiImage = gameObject.FindChildComponent<SpriteRenderer>("HappyEmoji");
         moveSpeed = navAgent.speed;
         MaxCapacity = Random.Range(1, 4);
         croassants = new Croassant[MaxCapacity];
@@ -60,21 +63,22 @@ public class Customer : MonoBehaviour
         customerBallon.SetActive(false);
     }
 
-    public Croassant MoveCroaasant()
+    public void MoveCroaasant(Vector3 position_)
     {
-        Croassant tempCorassant = default;
-        for (int i = 0; i < croassants.Length;i++)
+        croassants = stackPos.GetComponentsInChildren<Croassant>(); 
+        for (int i = 0; i < croassants.Length; i++)
         {
-            if (croassants[i] != null)
-            {
-                tempCorassant = croassants[i];
-                croassants[i] = null;
-                CurCapacity--;
-                return tempCorassant;
-            }
+            croassants[i].SimulateProjectile(position_, () => CurCapacity--);
+           
         }
+    }
 
-        return null;
+    public void ClearList()
+    {
+        foreach(Croassant c in croassants)
+        {
+            Destroy(c.gameObject);
+        }
     }
 
     public bool isMoveable()
@@ -104,7 +108,7 @@ public class Customer : MonoBehaviour
     void ChangeState(STATE state_)
     {
         if(state == state_) { return; }
-
+        prevState = state;
         state = state_;
         switch(state)
         {
@@ -119,11 +123,23 @@ public class Customer : MonoBehaviour
                 customerBallon.SetActive(true);
                 StartCoroutine(Moving(Waypoint.Instance.StoragePoint[0].transform.position));
                 break;
-            case STATE.MOVE_REGISTER:
+            case STATE.MOVE_REGISTER_OUT:
                 moveSpeed = navAgent.speed;
                 croassantBallon.SetActive(false);
                 stateImage.gameObject.SetActive(true);
                 StartCoroutine(Moving(Waypoint.Instance.RegisterPoint[0].transform.position));                
+                break;
+            case STATE.MOVE_REGISTER_IN:
+                moveSpeed = navAgent.speed;
+                croassantBallon.SetActive(false);
+                stateImage.gameObject.SetActive(true);
+                StartCoroutine(Moving(Waypoint.Instance.RegisterPoint[1].transform.position));
+                break;
+            case STATE.MOVE_SIT:
+                                        customerBallon.gameObject.SetActive(false);
+
+                moveSpeed = navAgent.speed;
+                StartCoroutine(Moving(Waypoint.Instance.SittingPoint.transform.position));
                 break;
             case STATE.WAIT:
                 moveSpeed = 0;
@@ -137,10 +153,17 @@ public class Customer : MonoBehaviour
 
                 break;
             case STATE.LEAVE:
+                foreach (Croassant croa in croassants)
+                {
+                    Destroy(croa.gameObject);
+                }
+                Instantiate(ResourceManager.objects["Trash"], Waypoint.Instance.tableStackPoint.transform);
                 moveSpeed = navAgent.speed;
+
                 StartCoroutine(Moving(Waypoint.Instance.LeavePoint.transform.position));
                 break;
             case STATE.SIT:
+                StartCoroutine(Sit());
                 break;
         }
     }
@@ -152,13 +175,40 @@ public class Customer : MonoBehaviour
             case STATE.WAIT:
                 if (isRegister == true)
                 {
-                    StartCoroutine(DelayState(STATE.LEAVE));
+                    if (prevState == STATE.MOVE_REGISTER_OUT)
+                    {
+                        customerBallon.gameObject.SetActive(false);
+                        emojiImage.gameObject.SetActive(true);
+                        StartCoroutine(DelayState(STATE.LEAVE));                     
+                    }
+                    else if(prevState == STATE.MOVE_REGISTER_IN)
+                    {
+                        stateImage.sprite = ResourceManager.sprites["TableChair"];
+                        if (Waypoint.Instance.IsSittingAreaUnlock)
+                        {
+                            
+                            StartCoroutine(DelayState(STATE.MOVE_SIT));
+                        }
+                        else
+                        {
+                            ChangeState(STATE.WAIT);
+                        }
+                    }
                 }
                 else if (CurCapacity >= MaxCapacity && isWait == true)
                 {
                     isStack = true;
                     isWait = false;
-                    StartCoroutine(DelayState(STATE.MOVE_REGISTER));
+                    float random = Random.value;
+                    if(random < 0.1)
+                    {
+                        StartCoroutine(DelayState(STATE.MOVE_REGISTER_OUT));
+                    }
+                    else
+                    {
+                        StartCoroutine(DelayState(STATE.MOVE_REGISTER_IN));
+
+                    }
                 }
                 break;
             case STATE.LEAVE:
@@ -167,6 +217,16 @@ public class Customer : MonoBehaviour
                 {
                     Destroy(this.gameObject);
                 }
+                break;
+            case STATE.MOVE_SIT:
+                if((navAgent.remainingDistance < 0.01f))
+                {
+                    ChangeState(STATE.SIT);
+                }
+           
+                break;
+            case STATE.SIT:
+
                 break;
         }
     }
@@ -177,12 +237,9 @@ public class Customer : MonoBehaviour
         SwitchAnimation(isStack);
         animator.SetFloat("moveSpeed", moveSpeed);
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            isRegister = true;
-        }
+
         StateProcess();
-        
+
     }
 
     private void SwitchAnimation(bool isStack_)
@@ -230,6 +287,26 @@ public class Customer : MonoBehaviour
         }
         moveSpeed = 0;
         StartCoroutine(DelayState(STATE.WAIT));
+    }
+    IEnumerator Sit()
+    {
+        animator.SetBool("isSitting", true);
+        navAgent.baseOffset = 0.75f;
+        this.transform.forward = (Waypoint.Instance.SittingPoint.transform.forward);
+        for (int i = 0; i < croassants.Length; i++)
+        {
+            croassants[i].transform.SetParent(Waypoint.Instance.tableStackPoint.transform);
+            croassants[i].transform.localPosition = Vector3.zero;
+        }
+        moveSpeed = 0;
+        yield return new WaitForSeconds(4f);
+        animator.SetBool("isSitting", false);
+
+        navAgent.baseOffset = 0f;
+        isStack = false;
+
+        ChangeState(STATE.LEAVE);
+
     }
 
     IEnumerator DelayState(STATE state)

@@ -61,13 +61,12 @@ public class BreadStorage : MonoBehaviour
             StopCoroutine(GetBread());
         }
 
-        if(customers == null || customers.Count < 1 ) { return; }
-        if(IsGivable())
-        {
-            CheckCustomerState();
-        }
-        
-        
+        if (customers == null || customers.Count < 1) { return; }
+
+        CheckCustomerState();
+
+
+
 
     }
 
@@ -81,21 +80,22 @@ public class BreadStorage : MonoBehaviour
             {
                 if (customer.CurCapacity < customer.MaxCapacity)
                 {
-                    customer.CurCapacity++;
                     GiveBread(customer);
                 }
             }
         }
     }
+
     public void GiveBread(Customer customer)
     {
         for (int i = 0; i < croassants.Length; i++)
         {
             if (croassants[i] != null)
             {
-                customer.AddCroassant(croassants[i]);
+                customer.CurCapacity++;
                 croassants[i].SimulateProjectile(customer.GetStackPos());
                 croassants[i].transform.SetParent(customer.stackPos.transform);
+                customer.AddCroassant(croassants[i]);
                 croassants[i] = null;
                 return;
             }
@@ -111,6 +111,8 @@ public class BreadStorage : MonoBehaviour
             temp.SimulateProjectile(pos[FindEmptyIndex()].transform.position);
             temp.transform.SetParent(null);
             AddStack(temp);
+            SoundManager.Instance.OnPlayClip(RDefine.SFX_GET);
+
             yield return getDelayTime;
         }
         isGiving = false;

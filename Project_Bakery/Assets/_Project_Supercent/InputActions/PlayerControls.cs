@@ -38,9 +38,9 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""TouchInput"",
-                    ""type"": ""Value"",
+                    ""type"": ""Button"",
                     ""id"": ""ea53780a-5fbf-42a5-9075-0bf932255675"",
-                    ""expectedControlType"": ""Touch"",
+                    ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true

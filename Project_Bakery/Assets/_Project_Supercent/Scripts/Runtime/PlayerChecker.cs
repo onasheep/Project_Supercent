@@ -19,16 +19,18 @@ public class PlayerChecker : MonoBehaviour
     {
         isEnter = false;
         scaleOffset = new Vector3(0.5f, 0f, 0.5f);
-        originScale = this.transform.localScale;
+        originScale = transform.localScale;
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
         {
+            GameManager.Instance.isFirstOven = true;
             StartCoroutine(AddScale());
             player = other.GetComponent<PlayerController>();    
             isEnter = true;
+            
         }
     }
 
